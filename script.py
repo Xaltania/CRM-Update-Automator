@@ -1,10 +1,12 @@
+import io
+import time
 import requests
 import csv
 from decouple import config
 
 class CRMUpdater:
-    def __init(self):
-        self.base_url = "https://it-hiring.blackbird.vs"
+    def __init__(self):
+        self.base_url = "https://it-hiring.blackbird.vc"
         self.access_token = config('ACCESS_TOKEN')
         self.headers = {
             'Authorization': f'Bearer {self.access_token}',
@@ -14,11 +16,49 @@ class CRMUpdater:
 
     def make_api_request(self, endpoint: str):
         """Make API requests with rate limiting and error handling"""
-        pass
+        url = f"{self.base_url}{endpoint}"
+        
+        try:
+            print(f"Making request to: {url}")
+            response = requests.get(url, headers=self.headers, timeout=30)
+            
+            time.sleep(self.rate_limit_delay)
+
+            print(f"Status code: {response.status_code}")
+            print(f"Raw response: {repr(response.text)}")
+
+            if response.status_code == 200:
+                try:
+                    return response.json()
+                except ValueError as json_err:
+                    print(f"JSON decode error: {json_err}")
+                    return None
+            else:
+                print(f"API Request failed: STATUS {response.status_code}: {response.text}")
+                return None
+        
+        except requests.exceptions.RequestException as e:
+            print(f"Request Error: {e}")
+            return None
+
 
     def get_crm_data(self):
         """Get CRM contact data"""
-        pass
+        print("Fetching CRM contact data...")
+        response_text = self.make_api_request("/api/data/crm")
+
+        if not response_text:
+            print("No CRM data found or invalid response format")
+            return []
+
+        try:
+            # Convert CSV string to list of dicts
+            csv_file = io.StringIO(response_text)
+            reader = csv.DictReader(csv_file)
+            return list(reader)
+        except Exception as e:
+            print(f"CSV parsing error: {e}")
+            return []
 
     def get_form_submissions(self):
         """Fetch event feedback form submissions"""
@@ -58,4 +98,5 @@ if __name__ == "__main__":
     if not os.path.exists('.env'):
         print("Unable to locate .env! You need it to authorise yourself" \
         "with the api")
-        
+    updater = CRMUpdater()
+    print(updater.get_crm_data())
