@@ -4,6 +4,10 @@ import requests
 import csv
 from decouple import config
 
+ENDPOINTS_DATA = '/api/data/crm'
+ENDPOINTS_SUBMISSION = '/api/data/form-submissions'
+
+
 class CRMUpdater:
     def __init__(self):
         self.base_url = "https://it-hiring.blackbird.vc"
@@ -12,7 +16,7 @@ class CRMUpdater:
             'Authorization': f'Bearer {self.access_token}',
             'Content-Type': 'application/json'
         }
-        self.rate_limit_delay = (10 / 5) + 0.1 # Keep under 5 req per 10 secs
+        self.rate_limit_delay = (10 / 5) + 0.1 # Keep < 5 req / 10s
 
     def make_api_request(self, endpoint: str):
         """Make API requests with rate limiting and error handling"""
@@ -45,7 +49,7 @@ class CRMUpdater:
     def get_crm_data(self):
         """Get CRM contact data"""
         print("Fetching CRM contact data...")
-        response_text = self.make_api_request("/api/data/crm")
+        response_text = self.make_api_request(ENDPOINTS_DATA)
 
         if not response_text:
             print("No CRM data found or invalid response format")
@@ -62,7 +66,8 @@ class CRMUpdater:
 
     def get_form_submissions(self):
         """Fetch event feedback form submissions"""
-        pass
+        print("Getting submission form....")
+        data = self.make_api_request(ENDPOINTS_SUBMISSION)
 
     def normalise_contact_data(self, contact):
         """Normalise the contact data structure"""
